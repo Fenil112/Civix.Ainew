@@ -9,8 +9,7 @@ import {
   collection, addDoc, serverTimestamp, query,
   where, getDocs, updateDoc, doc, increment
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import {
   Camera, Mic, MapPin, Upload, X, Loader2, CheckCircle,
@@ -210,22 +209,37 @@ export default function ReportIssue() {
     setAnalyzing(false);
   };
 
+  // Compress image using canvas to keep Firestore docs under 1MB
+  const compressImage = (file: File, maxWidth = 600, quality = 0.5): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Canvas not supported'));
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  };
 
-  // Upload files to Firebase Storage
+  // Compress all photos for Firestore storage (no Firebase Storage needed)
   const uploadFiles = async (): Promise<string[]> => {
     try {
-      if (!user) return [];
-      const promises = photos.map(async (file) => {
-        const fileExtension = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-        const storageRef = ref(storage, `complaints/${user.uid}/${fileName}`);
-        const snapshot = await uploadBytes(storageRef, file);
-        return await getDownloadURL(snapshot.ref);
-      });
+      const promises = photos.map(file => compressImage(file));
       return await Promise.all(promises);
     } catch (err) {
-      console.error('Error uploading images to Storage:', err);
-      toast.error('Failed to upload images. Please check your internet connection.');
+      console.error('Error compressing images:', err);
+      toast.error('Failed to process images.');
       return [];
     }
   };
