@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,12 +48,15 @@ export default function AuthorityComplaints() {
     fetchComplaints();
   }, [userProfile]);
 
-  const filtered = complaints.filter((c) => {
-    const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === 'all' || c.status === filterStatus;
-    const matchSeverity = filterSeverity === 'all' || c.severity === filterSeverity;
-    return matchSearch && matchStatus && matchSeverity;
-  });
+  const filtered = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return complaints.filter((c) => {
+      const matchSearch = !search || c.title.toLowerCase().includes(lowerSearch) || c.id.toLowerCase().includes(lowerSearch);
+      const matchStatus = filterStatus === 'all' || c.status === filterStatus;
+      const matchSeverity = filterSeverity === 'all' || c.severity === filterSeverity;
+      return matchSearch && matchStatus && matchSeverity;
+    });
+  }, [complaints, search, filterStatus, filterSeverity]);
 
   return (
     <DashboardLayout role="authority">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -41,6 +41,18 @@ export default function NearbyIssues() {
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const markersRef = useRef<any[]>([]);
+  const [mapsLoaded, setMapsLoaded] = useState(!!window.google);
+
+  useEffect(() => {
+    if (window.google) return;
+    const interval = setInterval(() => {
+      if (window.google) {
+        setMapsLoaded(true);
+        clearInterval(interval);
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, 'complaints'), orderBy('createdAt', 'desc'), limit(200));
@@ -81,7 +93,7 @@ export default function NearbyIssues() {
     });
 
     setMap(googleMap);
-  }, [complaints]);
+  }, [mapsLoaded, complaints]);
 
   useEffect(() => {
     if (!map || !complaints.length) return;
@@ -133,13 +145,17 @@ export default function NearbyIssues() {
     });
   }, [map, complaints, filterSeverity, filterCategory]);
 
-  const filtered = complaints.filter((c) => {
-    const sevMatch = filterSeverity === 'all' || c.severity === filterSeverity;
-    const catMatch = filterCategory === 'all' || c.category === filterCategory;
-    return sevMatch && catMatch;
-  });
+  const filtered = useMemo(() => {
+    return complaints.filter((c) => {
+      const sevMatch = filterSeverity === 'all' || c.severity === filterSeverity;
+      const catMatch = filterCategory === 'all' || c.category === filterCategory;
+      return sevMatch && catMatch;
+    });
+  }, [complaints, filterSeverity, filterCategory]);
 
-  const categories = [...new Set(complaints.map((c) => c.category))];
+  const categories = useMemo(() => {
+    return [...new Set(complaints.map((c) => c.category))];
+  }, [complaints]);
 
   return (
     <DashboardLayout role="citizen">

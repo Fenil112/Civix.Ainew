@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -59,11 +59,22 @@ export default function MyComplaints() {
     return unsub;
   }, [user]);
 
-  const filtered = complaints.filter((c) => {
-    const matchSearch = !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.category.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === 'all' || c.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return complaints.filter((c) => {
+      const matchSearch = !search || c.title.toLowerCase().includes(lowerSearch) || c.category.toLowerCase().includes(lowerSearch);
+      const matchStatus = filterStatus === 'all' || c.status === filterStatus;
+      return matchSearch && matchStatus;
+    });
+  }, [complaints, search, filterStatus]);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    complaints.forEach((c) => {
+      counts[c.status] = (counts[c.status] || 0) + 1;
+    });
+    return counts;
+  }, [complaints]);
 
   return (
     <DashboardLayout role="citizen">
@@ -100,7 +111,7 @@ export default function MyComplaints() {
         {/* Status Summary */}
         <div className="flex gap-2 flex-wrap mb-6">
           {Object.entries(statusConfig).map(([status, config]) => {
-            const count = complaints.filter((c) => c.status === status).length;
+            const count = statusCounts[status] || 0;
             if (!count) return null;
             return (
               <button

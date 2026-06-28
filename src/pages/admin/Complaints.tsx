@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { collection, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -70,11 +70,14 @@ export default function AdminComplaints() {
     }
   };
 
-  const filtered = complaints.filter(
-    (c) =>
-      (c.title.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase())) &&
-      (filterDept === 'all' || c.department === filterDept)
-  );
+  const filtered = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    return complaints.filter(
+      (c) =>
+        (c.title.toLowerCase().includes(lowerSearch) || c.id.toLowerCase().includes(lowerSearch)) &&
+        (filterDept === 'all' || c.department === filterDept)
+    );
+  }, [complaints, search, filterDept]);
 
   return (
     <DashboardLayout role="admin">

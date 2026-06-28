@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
@@ -39,7 +39,7 @@ const adminLinks = [
   { to: '/profile', icon: User, label: 'Profile' },
 ];
 
-export default function Sidebar({ role }: SidebarProps) {
+const Sidebar = memo(function Sidebar({ role }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { userProfile, logout } = useAuth();
   const location = useLocation();
@@ -157,4 +157,6 @@ export default function Sidebar({ role }: SidebarProps) {
       </div>
     </motion.aside>
   );
-}
+});
+
+export default Sidebar;

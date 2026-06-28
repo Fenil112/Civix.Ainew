@@ -55,12 +55,16 @@ export default function ReportIssue() {
 
   // Dropzone for photos
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.slice(0, 5 - photos.length);
-    setPhotos((prev) => [...prev, ...newFiles]);
-    const urls = newFiles.map((f) => URL.createObjectURL(f));
-    setPhotoUrls((prev) => [...prev, ...urls]);
-    toast.success(`${newFiles.length} photo(s) added`);
-  }, [photos]);
+    setPhotos((prev) => {
+      const newFiles = acceptedFiles.slice(0, 5 - prev.length);
+      if (newFiles.length === 0) return prev;
+      
+      const urls = newFiles.map((f) => URL.createObjectURL(f));
+      setPhotoUrls((prevUrls) => [...prevUrls, ...urls]);
+      toast.success(`${newFiles.length} photo(s) added`);
+      return [...prev, ...newFiles];
+    });
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -69,14 +73,18 @@ export default function ReportIssue() {
     maxSize: 10 * 1024 * 1024,
   });
 
-  const removePhoto = (index: number) => {
-    URL.revokeObjectURL(photoUrls[index]);
+  const removePhoto = useCallback((index: number) => {
+    setPhotoUrls((prevUrls) => {
+      if (prevUrls[index]) {
+        URL.revokeObjectURL(prevUrls[index]);
+      }
+      return prevUrls.filter((_, i) => i !== index);
+    });
     setPhotos((prev) => prev.filter((_, i) => i !== index));
-    setPhotoUrls((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   // GPS Location
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) return toast.error('Geolocation not supported');
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
@@ -102,10 +110,10 @@ export default function ReportIssue() {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  };
+  }, []);
 
   // Voice Recording
-  const startVoiceInput = () => {
+  const startVoiceInput = useCallback(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return toast.error('Voice input not supported in this browser');
 
@@ -132,12 +140,12 @@ export default function ReportIssue() {
     recognition.start();
     setRecording(true);
     toast.success('Listening... speak your issue');
-  };
+  }, []);
 
-  const stopVoiceInput = () => {
+  const stopVoiceInput = useCallback(() => {
     recognitionRef.current?.stop();
     setRecording(false);
-  };
+  }, []);
 
   // Check duplicates
   const checkDuplicates = async (): Promise<string | null> => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
@@ -29,15 +29,11 @@ const severityConfig: Record<string, { color: string; dot: string }> = {
   critical: { color: 'text-red-400', dot: 'bg-red-400' },
 };
 
-function StatCard({ label, value, icon: Icon, color, bg }: {
+const StatCard = memo(function StatCard({ label, value, icon: Icon, color, bg }: {
   label: string; value: string | number; icon: any; color: string; bg: string;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass rounded-2xl p-5"
-    >
+    <div className="glass rounded-2xl p-5">
       <div className="flex items-start justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
           <Icon className={`w-5 h-5 ${color}`} />
@@ -45,9 +41,9 @@ function StatCard({ label, value, icon: Icon, color, bg }: {
       </div>
       <p className={`text-3xl font-bold font-display ${color}`}>{value}</p>
       <p className="text-sm text-slate-500 mt-1">{label}</p>
-    </motion.div>
+    </div>
   );
-}
+});
 
 export default function CitizenDashboard() {
   const { user, userProfile } = useAuth();
