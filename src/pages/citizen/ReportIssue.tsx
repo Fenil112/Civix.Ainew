@@ -210,15 +210,6 @@ export default function ReportIssue() {
     setAnalyzing(false);
   };
 
-  // Convert File to Base64 String
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
-  };
 
   // Upload files to Firebase Storage
   const uploadFiles = async (): Promise<string[]> => {
