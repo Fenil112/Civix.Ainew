@@ -9,7 +9,7 @@ if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
 export interface ComplaintAnalysis {
   category: string;
