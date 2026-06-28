@@ -14,7 +14,7 @@ const loadGoogleMaps = () => {
   if ((window as any).google && (window as any).google.maps) return;
 
   const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,visualization`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,visualization&loading=async`;
   script.async = true;
   script.defer = true;
   document.head.appendChild(script);

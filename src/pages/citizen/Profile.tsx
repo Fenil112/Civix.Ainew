@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { toast } from 'react-hot-toast';
@@ -73,12 +74,11 @@ export default function Profile() {
     
     setLoading(true);
     try {
-      const url = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `avatar_${Date.now()}.${fileExtension}`;
+      const storageRef = ref(storage, `users/${user.uid}/${fileName}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(snapshot.ref);
       
       await updateDoc(doc(db, 'users', user.uid), {
         photoURL: url,

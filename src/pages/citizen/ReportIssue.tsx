@@ -9,7 +9,8 @@ import {
   collection, addDoc, serverTimestamp, query,
   where, getDocs, updateDoc, doc, increment
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { toast } from 'react-hot-toast';
 import {
   Camera, Mic, MapPin, Upload, X, Loader2, CheckCircle,
@@ -219,14 +220,21 @@ export default function ReportIssue() {
     });
   };
 
-  // Convert files to Base64 (since Firebase Storage is not enabled)
+  // Upload files to Firebase Storage
   const uploadFiles = async (): Promise<string[]> => {
     try {
-      const promises = photos.map(file => convertFileToBase64(file));
+      if (!user) return [];
+      const promises = photos.map(async (file) => {
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+        const storageRef = ref(storage, `complaints/${user.uid}/${fileName}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        return await getDownloadURL(snapshot.ref);
+      });
       return await Promise.all(promises);
     } catch (err) {
-      console.error('Error converting images to Base64:', err);
-      toast.error('Failed to process uploaded images.');
+      console.error('Error uploading images to Storage:', err);
+      toast.error('Failed to upload images. Please check your internet connection.');
       return [];
     }
   };
