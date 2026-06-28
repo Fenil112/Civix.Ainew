@@ -3,9 +3,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'YOUR_GEMINI_API_KEY';
 
+if (GEMINI_API_KEY === 'YOUR_GEMINI_API_KEY') {
+  console.error("⚠️ GEMINI API KEY IS MISSING! Please add VITE_GEMINI_API_KEY to your Vercel Environment Variables. Using fallback AI responses for now.");
+}
+
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+export const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
 
 export interface ComplaintAnalysis {
   category: string;
